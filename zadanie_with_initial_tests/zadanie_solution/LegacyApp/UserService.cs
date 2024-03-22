@@ -16,7 +16,7 @@ namespace LegacyApp
                 return false;
             }
 
-            if (!AgeCheck(dateOfBirth))
+            if (AgeCheck(dateOfBirth))
             {
                 return false;
             }
@@ -32,57 +32,50 @@ namespace LegacyApp
                 FirstName = firstName,
                 LastName = lastName
             };
-            
-            CreditLimitCalculator(user,client);
-            
-            if (user.HasCreditLimit && user.CreditLimit < 500)
+            if (CreditLimitCalculator(user, client))
             {
                 return false;
             }
-
             UserDataAccess.AddUser(user);
             return true;
         }
 
-        public void CreditLimitCalculator(User user, Client client)
+        private static bool CreditLimitCalculator(User user, Client client)
         {
-            if (client.Type == "VeryImportantClient")
+            switch (client.Type)
             {
-                user.HasCreditLimit = false;
+                case "VeryImportantClient":
+                    user.HasCreditLimit = false;
+                    break;
+                case "ImportantClient":
+                    using (var userCreditService = new UserCreditService())
+                    {
+                        var creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
+                        creditLimit = creditLimit * 2;
+                        user.CreditLimit = creditLimit;
+                    }
+                    break;
+                default:
+                    user.HasCreditLimit = true;
+                    using (var userCreditService = new UserCreditService())
+                    {
+                        var creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
+                        user.CreditLimit = creditLimit;
+                    }
+                    break;
             }
-            else if (client.Type == "ImportantClient")
-            {
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    creditLimit = creditLimit * 2;
-                    user.CreditLimit = creditLimit;
-                }
-            }
-            else
-            {
-                user.HasCreditLimit = true;
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    user.CreditLimit = creditLimit;
-                }
-            }
+            return user.HasCreditLimit && user.CreditLimit < 500;
+            
         }
-        public bool AgeCheck(DateTime dateOfBirth)
+        private static bool AgeCheck(DateTime dateOfBirth)
         {
             var now = DateTime.Now;
-            int age = now.Year - dateOfBirth.Year;
+            var age = now.Year - dateOfBirth.Year;
             if (now.Month < dateOfBirth.Month || (now.Month == dateOfBirth.Month && now.Day < dateOfBirth.Day))
             {
                 age--;
             }
-            if (age < 21)
-            {
-                return false;
-            }
-
-            return true;
+            return age < 21;
         }
     }
 }
