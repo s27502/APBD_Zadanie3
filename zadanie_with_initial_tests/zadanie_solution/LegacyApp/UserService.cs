@@ -33,6 +33,19 @@ namespace LegacyApp
                 LastName = lastName
             };
             
+            CreditLimitCalculator(user,client);
+            
+            if (user.HasCreditLimit && user.CreditLimit < 500)
+            {
+                return false;
+            }
+
+            UserDataAccess.AddUser(user);
+            return true;
+        }
+
+        public void CreditLimitCalculator(User user, Client client)
+        {
             if (client.Type == "VeryImportantClient")
             {
                 user.HasCreditLimit = false;
@@ -55,19 +68,6 @@ namespace LegacyApp
                     user.CreditLimit = creditLimit;
                 }
             }
-
-            if (user.HasCreditLimit && user.CreditLimit < 500)
-            {
-                return false;
-            }
-
-            UserDataAccess.AddUser(user);
-            return true;
-        }
-
-        public void CreditLimitCalculator(User user)
-        {
-            
         }
         public bool AgeCheck(DateTime dateOfBirth)
         {
